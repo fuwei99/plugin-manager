@@ -1,6 +1,7 @@
 # SillyTavern 插件管理器 (Plugin Manager)
 
 一个用于在 SillyTavern 界面内管理其他插件的插件。
+## 使用方法：打开http://127.0.0.1:8000/api/plugins/plugin-manager/ui即可
 
 ## 功能
 
