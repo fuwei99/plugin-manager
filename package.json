@@ -1,0 +1,19 @@
+{
+  "name": "sillytavern-plugin-manager",
+  "version": "1.0.0",
+  "description": "一个用于管理 SillyTavern 插件（安装/更新/删除）的插件。",
+  "main": "index.js",
+  "author": "Your Name Here", 
+  "license": "MIT",
+  "keywords": [
+    "sillytavern",
+    "plugin",
+    "manager"
+  ],
+  "dependencies": {
+    "express": "^4.17.1" 
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

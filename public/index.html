@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>插件管理器 - SillyTavern</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #1a1b1e;
+            --bg-secondary: #2a2b30;
+            --bg-tertiary: #3a3b42;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --accent-primary: #6c5ce7;
+            --accent-secondary: #a29bfe;
+            --success: #00b894;
+            --warning: #fdcb6e;
+            --error: #d63031;
+            --hover-color: rgba(108, 92, 231, 0.1);
+        }
+        
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .container {
+            padding: 1.5rem;
+        }
+        
+        .app-header {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--bg-tertiary);
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background-color: var(--bg-secondary);
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background-color: var(--bg-tertiary);
+            border-bottom: none;
+            border-top-left-radius: 8px !important;
+            border-top-right-radius: 8px !important;
+            padding: 1rem;
+        }
+        
+        .form-control, .form-select, .btn {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--bg-tertiary);
+            color: var(--text-primary);
+            border-radius: 6px;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--bg-tertiary);
+            color: var(--text-primary);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .btn-outline-primary {
+            color: var(--accent-primary);
+            border-color: var(--accent-primary);
+        }
+        
+        .btn-primary:hover, .btn-outline-primary:hover {
+            background-color: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+        }
+        
+        .table {
+            color: var(--text-primary);
+        }
+        
+        .table thead th {
+            border-bottom: 2px solid var(--bg-tertiary);
+            color: var(--text-secondary);
+            font-weight: 600;
+            background-color: var(--bg-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        
+        .table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+        
+        .table tbody tr:hover {
+            background-color: var(--hover-color);
+        }
+        
+        .plugin-card {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .plugin-card .card-body {
+            flex: 1;
+        }
+        
+        .plugin-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            margin-right: 0.5rem;
+            display: inline-block;
+        }
+        
+        .plugin-badge.git {
+            background-color: #6c5ce7;
+            color: white;
+        }
+        
+        .plugin-badge.update {
+            background-color: #00b894;
+            color: white;
+        }
+        
+        .plugin-badge.local-changes {
+            background-color: #fdcb6e;
+            color: black;
+        }
+        
+        .plugin-list-view {
+            overflow-y: auto;
+            max-height: calc(100vh - 250px);
+        }
+        
+        .plugin-actions .btn {
+            margin-right: 0.4rem;
+            margin-bottom: 0.4rem;
+        }
+        
+        .toast-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            visibility: hidden;
+            opacity: 0;
+            transition: visibility 0s linear 0.2s, opacity 0.2s;
+        }
+        
+        .loading-overlay.show {
+            visibility: visible;
+            opacity: 1;
+            transition-delay: 0s;
+        }
+        
+        .spinner-border {
+            width: 3rem; 
+            height: 3rem;
+        }
+        
+        .loading-text {
+            color: var(--text-primary);
+            margin-top: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        @media (max-width: 768px) {
+            .plugin-card {
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 加载叠层 -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="text-center">
+        <div class="spinner-border text-light" role="status"></div>
+        <div class="loading-text" id="loadingText">正在处理...</div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="app-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1><i class="bi bi-boxes me-2"></i>SillyTavern 插件管理器</h1>
+            <button id="refreshBtn" class="btn btn-outline-light" title="刷新插件列表">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-cloud-download me-2"></i>安装新插件</h5>
+                </div>
+                <div class="card-body">
+                    <form id="installForm" class="row g-3 align-items-end">
+                        <div class="col-md-9">
+                            <label for="gitUrl" class="form-label">Git 仓库 URL</label>
+                            <input type="text" class="form-control" id="gitUrl" placeholder="https://github.com/用户名/插件仓库.git" required>
+                            <div class="form-text text-muted">输入包含 SillyTavern 插件的 GitHub 仓库链接</div>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-download me-2"></i>安装插件
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="bi bi-list-ul me-2"></i>已安装插件</h2>
+                <div class="input-group" style="max-width: 300px;">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" id="pluginSearch" class="form-control" placeholder="搜索插件...">
+                </div>
+            </div>
+            <hr>
+        </div>
+    </div>
+    
+    <div class="row plugin-list-view" id="pluginList">
+        <!-- 插件列表会动态生成在这里 -->
+        <div class="col-12 text-center py-5">
+            <div class="spinner-border text-light" role="status"></div>
+            <p class="mt-3">正在加载已安装的插件...</p>
+        </div>
+    </div>
+</div>
+
+<!-- 确认删除模态框 -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>确认删除</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>您确定要删除插件 <strong id="deletePluginName"></strong> 吗？</p>
+                <p class="text-warning">此操作无法撤销，插件目录及其所有内容将被永久删除。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-2"></i>删除插件
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 插件详情模态框 -->
+<div class="modal fade" id="pluginDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark text-light">
+            <div class="modal-header">
+                <h5 class="modal-title">插件详情</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="pluginDetailsContent">
+                <!-- 插件详情内容 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast 容器 -->
+<div class="toast-container"></div>
+
+<!-- Bootstrap Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<!-- 插件管理器脚本 -->
+<script src="static/script.js"></script>
+</body>
+</html>
